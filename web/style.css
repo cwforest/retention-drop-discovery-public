@@ -1,0 +1,240 @@
+/* 브라우저의 밝게/어둡게 설정과 무관하게 항상 같은 색으로 보이게 함.
+   (prefers-color-scheme 을 쓰지 않고, 폼 요소까지 밝은 쪽으로 고정하려고 color-scheme 지정) */
+:root{
+  color-scheme:light;
+  --navy:#0C2E5C; --navy-2:#17457F; --sky:#8FC1EA; --sky-2:#5B8FC9;
+  --bg:#ffffff; --fg:#1a1a1a; --dim:#5c6670; --faint:#8a929a;
+  --line:#dde1e6; --rule:#0C2E5C; --card:#f4f6f8; --accent:#0C2E5C;
+  --warm:#c0392b;
+  --none:#cbd2da; --found:#5B8FC9; --report:#0C2E5C;
+  --sans:"Noto Sans KR","Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --serif:var(--sans);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  /* 한글은 한 글자가 1em 이라 ch 단위를 쓰면 안 됨 (ch 는 숫자 0 의 폭 ≒ 0.5em).
+     본문 한 줄은 한글 38자쯤이 읽기 좋음 */
+  --read:38em;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--sans); font-size:16px; line-height:1.78; letter-spacing:-.01em;
+  /* 한글은 어절 단위로 끊는다 — 없으면 '낮습/니다' 처럼 단어 중간에서 깨진다 */
+  word-break:keep-all; overflow-wrap:break-word;
+}
+.inner{max-width:1240px; margin:0 auto; padding:0 32px}
+@media (max-width:640px){body{font-size:15px} .inner{padding:0 18px}}
+
+/* ── 감청 머리 밴드 ───────────────────────────────────── */
+.hero{background:var(--navy); color:#fff; padding:60px 0 44px; position:relative; overflow:hidden}
+.hero::after{content:""; position:absolute; right:-120px; top:-160px; width:520px; height:520px;
+  border-radius:50%; background:rgba(255,255,255,.035)}
+.hero .inner{position:relative; z-index:1}
+.hero .bar{width:150px; height:5px; background:var(--sky); margin:0 0 26px}
+.eyebrow{color:var(--sky); font-size:.84rem; font-weight:700; letter-spacing:.02em; margin:0 0 12px}
+h1{font-weight:800; font-size:clamp(2rem,5vw,3.3rem); line-height:1.28;
+  letter-spacing:-.035em; margin:0 0 22px; color:#fff; text-wrap:balance}
+.deck{font-size:clamp(.98rem,1.7vw,1.12rem); color:rgba(255,255,255,.84);
+  max-width:46em; margin:0 0 34px; line-height:1.78; text-wrap:pretty}
+.deck strong{color:#fff; font-weight:700}
+
+.statrow{display:grid; grid-template-columns:repeat(4,1fr); gap:0;
+  border-top:1px solid rgba(255,255,255,.22)}
+@media (max-width:760px){.statrow{grid-template-columns:repeat(2,1fr)}}
+.stat{padding:18px 18px 16px 0}
+.stat b{display:block; font-weight:800; font-size:clamp(1.5rem,3vw,2rem);
+  line-height:1.1; letter-spacing:-.03em; color:#fff}
+.stat span{display:block; color:rgba(255,255,255,.66); font-size:.78rem; margin-top:5px}
+.byline{color:rgba(255,255,255,.52); font-size:.76rem; font-family:var(--mono); margin:14px 0 0}
+
+/* ── 절: 제목 단 + 본문 단 ────────────────────────────── */
+main section{padding:62px 0; border-top:1px solid var(--line)}
+/* 두 칸 배치는 290 + 60 + 820 + 좌우 여백 64 = 1,234px 가 있어야 들어감.
+   1000px 로 걸어 두니 1,000~1,233px 창에서 그림이 오른쪽으로 삐져나갔음 */
+@media (min-width:1240px){
+  main section > .inner{display:grid; grid-template-columns:290px minmax(0,820px);
+    gap:0 60px; align-items:start; justify-content:center}
+  .sec-head{position:sticky; top:28px}
+  .sec-head h2{font-size:clamp(1.45rem,2.2vw,1.9rem)}
+  .sec-head .bar{margin-bottom:0}
+}
+.kicker{display:flex; align-items:center; gap:10px; margin:0 0 12px}
+.chip{background:var(--navy); color:#fff; font-size:.74rem; font-weight:700;
+  padding:3px 12px; border-radius:999px; letter-spacing:.04em}
+.kicker em{font-style:normal; color:var(--dim); font-size:.86rem; font-weight:400}
+h2{font-weight:800; font-size:clamp(1.45rem,3vw,2.05rem); line-height:1.34;
+  letter-spacing:-.03em; margin:0 0 12px; text-wrap:balance}
+.bar{width:120px; height:4px; background:var(--sky); margin:0 0 26px}
+h3{font-size:1rem; font-weight:700; margin:0 0 10px; letter-spacing:-.015em}
+
+/* 본문 요소를 모두 같은 폭으로 맞춤 — 문단만 좁아 어긋나 보이던 것을 없앰 */
+.sec-body > p, .sec-body > ul, .sec-body > ol:not(.steps), .sec-body > dl,
+.sec-body > .callout, .sec-body > .formula, .sec-body > .pull,
+.sec-body > .slider-box, .sec-body > #groups1, .sec-body > #groups2,
+/* #groups3 와 하한 막대 묶음이 빠져 있어 혼자 폭이 넓었음 (10/15) */
+.sec-body > #groups3, .sec-body > #find2-wrap, .sec-body > #find3-wrap,
+.sec-body > table, .sec-body > .subhead{max-width:var(--read)}
+/* 링크 — 기본 파랑이 감청 테마와 안 맞아 색과 밑줄을 다시 잡음 */
+a{color:var(--navy); text-decoration:underline; text-underline-offset:3px;
+  text-decoration-thickness:1px; text-decoration-color:var(--sky-2)}
+a:hover{text-decoration-color:var(--navy)}
+a:focus-visible{outline:2px solid var(--sky); outline-offset:2px}
+
+p{margin:0 0 16px; text-wrap:pretty}
+em{font-style:normal; font-weight:700; color:var(--navy-2)}
+code{font-family:var(--mono); font-size:.88em; background:var(--card);
+  border:1px solid var(--line); padding:.08em .36em; border-radius:3px}
+.num{font-family:var(--mono); font-weight:700; font-variant-numeric:tabular-nums}
+.note{color:var(--dim); font-size:.89rem; line-height:1.72}
+.hidden{display:none}
+
+/* 큰 숫자 */
+.pull{display:grid; grid-template-columns:auto 1fr; gap:0 30px; align-items:center;
+  background:var(--card); border-left:5px solid var(--navy); padding:24px 28px; margin:32px 0}
+@media (max-width:640px){.pull{grid-template-columns:1fr; gap:8px}}
+.pull b{font-weight:800; letter-spacing:-.04em; line-height:1;
+  font-size:clamp(1.9rem,4.6vw,3rem); color:var(--navy); white-space:nowrap}
+.pull .n1{color:var(--sky-2)}          /* 찾아내는 데 필요한 δ */
+.pull .n2{color:var(--navy)}           /* 유의하다고 말하는 데 필요한 δ */
+.pull .ar{color:var(--faint); font-weight:400; margin:0 .14em; font-size:.62em}
+.pull small{font-size:.4em; margin-left:.06em}
+.pull p{margin:0; font-size:.98rem}
+
+ul.plain{list-style:none; padding:0; margin:0 0 16px}
+ul.plain li{padding:13px 0; border-bottom:1px solid var(--line)}
+ul.plain li:first-child{border-top:2px solid var(--rule)}
+ul.plain b{display:block; margin-bottom:2px}
+ul.plain span{color:var(--dim); font-size:.92rem}
+
+/* ── 그림 ─────────────────────────────────────────────── */
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:38px}
+@media (max-width:860px){.grid-2{grid-template-columns:1fr; gap:44px}}
+figure{margin:0}
+figure h3{text-align:center; color:var(--navy); padding-bottom:10px;
+  border-bottom:2px solid var(--navy); margin-bottom:14px}
+.chart{position:relative; height:310px}
+figcaption{color:var(--dim); font-size:.88rem; margin-top:13px; line-height:1.72; text-wrap:pretty}
+figcaption strong{color:var(--fg)}
+
+.callout{background:var(--card); border:1px solid var(--line); padding:22px 24px; margin-top:30px}
+.callout h4{margin:0 0 7px; font-size:.95rem; font-weight:700; color:var(--navy)}
+.callout p{margin:0; font-size:.94rem; color:var(--dim)}
+.callout strong{color:var(--fg)}
+
+/* ── 방법 4단계 ───────────────────────────────────────── */
+ol.steps{list-style:none; padding:0; margin:0 0 8px;
+  display:grid; grid-template-columns:repeat(2,1fr); gap:16px}
+@media (max-width:520px){ol.steps{grid-template-columns:1fr}}
+ol.steps li{background:var(--card); border-top:3px solid var(--navy); padding:16px 18px 18px}
+.step-n{font-family:var(--mono); font-size:.7rem; color:var(--navy-2); font-weight:700; letter-spacing:.1em}
+ol.steps h3{margin:7px 0 6px; font-size:.97rem}
+ol.steps p{margin:0; font-size:.88rem; color:var(--dim); line-height:1.68}
+
+.formula{background:var(--navy); color:#fff; padding:20px 24px; margin-top:22px}
+.formula p{margin:0 0 7px; font-family:var(--mono); font-size:.94rem}
+.formula p:last-child{margin:0}
+.formula code{background:none; border:none; padding:0; font-size:.94rem; color:#fff}
+
+/* ── δ 슬라이더 ───────────────────────────────────────── */
+.slider-box{background:var(--card); border-top:3px solid var(--navy);
+  padding:22px 24px 20px; margin:30px 0 20px}
+.subhead{margin:40px 0 10px; font-size:1.08rem; font-weight:800; color:var(--navy);
+  padding-bottom:8px; border-bottom:2px solid var(--navy)}
+.howto{margin:0 0 12px; font-size:.88rem; color:var(--navy-2); font-weight:700}
+.howto strong{border-bottom:2px solid var(--sky)}
+.slider-box label{display:flex; align-items:baseline; gap:10px; font-weight:700; margin-bottom:12px}
+#delta-out{font-weight:800; color:var(--navy); font-size:2.3rem; line-height:1; letter-spacing:-.03em}
+input[type=range]{width:100%; accent-color:var(--navy); height:22px}
+.legend{display:flex; flex-wrap:wrap; gap:16px; margin-top:12px; color:var(--dim); font-size:.84rem}
+.legend span{display:flex; align-items:center; gap:7px}
+.sw{width:14px; height:14px; display:inline-block; border-radius:2px}
+.sw-none{background:var(--none)} .sw-found{background:var(--found)} .sw-report{background:var(--report)}
+
+.grow{display:grid; gap:0}
+.grow .row{padding:17px 0; border-bottom:1px solid var(--line)}
+.grow .row:first-child{border-top:2px solid var(--rule)}
+.row-head{display:flex; justify-content:space-between; align-items:baseline; gap:14px; flex-wrap:wrap}
+.gname{font-family:var(--mono); font-size:.9rem; font-weight:700}
+.gsize{color:var(--faint); font-size:.78rem; font-family:var(--mono)}
+.track{position:relative; height:20px; overflow:hidden; margin:11px 0 8px;
+  display:flex; background:var(--none);
+  /* 직접 끌어 그 집단만 움직일 수 있음. pan-y 라 세로 스크롤은 그대로 됨 */
+  cursor:ew-resize; touch-action:pan-y}
+.track:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.seg-found{background:var(--found)} .seg-report{background:var(--report)}
+/* 마커는 연회색 구간과 남색 구간 위를 모두 지나므로, 흰 심지에 어두운 테두리를 둘러
+   어느 쪽에서도 보이게 함 */
+.marker{position:absolute; top:-5px; bottom:-5px; width:3px; background:#fff;
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.6); border-radius:1px}
+/* 따로 움직여 둔 줄은 마커를 강조색으로 — 위 슬라이더와 값이 다르다는 표시임 */
+/* --accent 는 남색 띠(--report)와 같은 값이라 그 위에서 안 보임 → 안 쓰이던 --warm 을 씀 */
+.row.own .marker{background:var(--warm); box-shadow:0 0 0 1.5px rgba(255,255,255,.85); width:4px}
+.status{font-size:.9rem; font-weight:700}
+kbd{font-family:var(--mono); font-size:.8em; border:1px solid var(--line);
+  border-radius:3px; padding:0 4px; background:var(--card)}
+.s-none{color:var(--faint)} .s-found{color:var(--sky-2)} .s-report{color:var(--navy)}
+.gnums{color:var(--faint); font-size:.77rem; font-family:var(--mono)}
+
+/* ── 한계 ─────────────────────────────────────────────── */
+dl.limits{margin:0}
+dl.limits dt{font-weight:700; padding-top:18px; border-top:1px solid var(--line)}
+dl.limits dt:first-child{border-top:2px solid var(--rule)}
+dl.limits dd{margin:5px 0 18px; color:var(--dim); font-size:.94rem}
+
+table.band,table.files{border-collapse:collapse; width:100%; font-size:.88rem}
+table.band th,table.band td,table.files td{padding:9px 10px; text-align:right;
+  border-bottom:1px solid var(--line)}
+table.band th{background:var(--navy); color:#fff; font-weight:700; font-size:.8rem; border:none}
+table.band tbody tr:nth-child(even) td{background:var(--card)}
+table.band th:first-child,table.band td:first-child,
+table.files td:first-child{text-align:left}
+table.files td:first-child{font-family:var(--mono); width:38%}
+table.files td:last-child{color:var(--dim)}
+
+footer{background:var(--navy); color:rgba(255,255,255,.66); font-size:.8rem; padding:30px 0 44px}
+footer p{margin:0 0 4px}
+footer .right{color:rgba(255,255,255,.44); font-size:.74rem; margin-top:10px}
+
+/* ── 평가 창 전환 단추 ────────────────────────────────────────────── */
+.wintabs-wrap{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:26px 0 0}
+.wintabs-label{color:rgba(255,255,255,.55); font-size:.78rem; letter-spacing:.01em}
+.wintabs{display:inline-flex; gap:4px; padding:4px; border-radius:999px;
+         background:rgba(255,255,255,.10)}
+.wintabs button{appearance:none; border:0; cursor:pointer; font:inherit; font-size:.82rem;
+                font-weight:700; color:rgba(255,255,255,.72); background:transparent;
+                padding:7px 18px; border-radius:999px; transition:background .15s, color .15s;
+                white-space:nowrap}
+.wintabs button:hover{color:#fff; background:rgba(255,255,255,.10)}
+.wintabs button.on{color:var(--navy); background:var(--sky)}
+.wintabs button:focus-visible{outline:2px solid var(--sky); outline-offset:2px}
+
+/* 단추가 머리말(감청)에서 본문(흰 바탕)으로 내려와 색을 다시 잡음 */
+.sec-body .wintabs-wrap{margin:22px 0 10px; align-items:center}
+.sec-body .wintabs-label{color:var(--dim); font-size:.8rem}
+.sec-body .wintabs{background:rgba(12,46,92,.07)}
+.sec-body .wintabs button{color:var(--dim)}
+.sec-body .wintabs button:hover{color:var(--navy); background:rgba(12,46,92,.08)}
+.sec-body .wintabs button.on{color:#fff; background:var(--navy)}
+.win-note{margin:0 0 6px}
+
+/* 도달(빔) 관문에 막힌 집단 표시 — 조건 3개에서 처음 나옴 */
+.tag-gate{display:inline-block; background:var(--navy); color:#fff; font-size:.68rem;
+  font-weight:700; padding:1px 7px; border-radius:999px; letter-spacing:.02em;
+  vertical-align:.08em; margin-left:6px}
+
+/* ── 돌려보기 순위표 ──────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto; margin:16px 0 10px; max-width:var(--read)}
+table.rank{border-collapse:collapse; width:100%; font-size:.84rem}
+table.rank th, table.rank td{padding:7px 10px; border-bottom:1px solid var(--line);
+  text-align:left; white-space:nowrap}
+table.rank th{font-size:.74rem; font-weight:700; color:var(--dim);
+  letter-spacing:.02em; border-bottom:1.5px solid var(--navy)}
+table.rank .r{text-align:right}
+table.rank td.g{white-space:normal; font-family:var(--mono); font-size:.78rem;
+  line-height:1.45; min-width:17em}
+table.rank tr.hit{background:rgba(12,46,92,.05)}
+table.rank tr.hit td{font-weight:700}
+table.rank td.num{font-family:var(--mono)}
+table.rank .mine{display:inline-block; background:var(--navy); color:#fff;
+  font-size:.66rem; font-weight:700; padding:1px 7px; border-radius:999px; margin-left:6px}

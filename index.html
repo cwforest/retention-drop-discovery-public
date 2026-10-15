@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>리텐션 하락 진단</title>
+<meta name="description" content="리텐션이 떨어졌을 때 어느 유저 집단부터 원인을 검증해야 하는지 가설 후보를 자동으로 찾고 순위를 매기는 방법. KKBox 데이터로 실험한 결과.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="web/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+  <div class="bar"></div>
+  <p class="eyebrow">Product Analytics ·리텐션 하락 진단을 위한 편차 기반 예외 모델 마이닝</p>
+  <h1>리텐션이 떨어졌다.<br>어느 집단부터 봐야 할까?</h1>
+  <p class="deck">
+    리텐션이 하락했을 때, 원인을 검증할 <strong>유저 집단 후보를 자동으로 찾아 순위를 매기는</strong> 방법입니다.<br>
+    KKBox 음악 스트리밍 데이터로 만들고, <strong>정답을 아는 하락을 직접 심어</strong> 얼마나 작은 하락까지 잡아내는지 측정했습니다.
+  </p>
+
+  <div class="statrow">
+    <div class="stat"><b>110만</b><span>2017년 3월 활동 유저</span></div>
+    <div class="stat"><b data-meta="분석행" data-fmt="만">—</b><span>분석 행 (유저 × 기준일)</span></div>
+    <div class="stat"><b data-meta="평가행" data-fmt="만">—</b><span>평가 기간 행</span></div>
+    <div class="stat"><b data-meta="조건수">—</b><span>집단을 가르는 조건</span></div>
+  </div>
+  <p class="byline" id="meta-line">데이터를 불러오는 중…</p>
+  </div>
+</header>
+
+<main>
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<section id="problem"><div class="inner">
+  <div class="sec-head">  <p class="kicker"><span class="chip">01</span><em>문제</em></p>
+  <h2>눈으로 훑는 방식은 세 가지를 못 한다</h2>
+  <div class="bar"></div>
+  </div>
+  <div class="sec-body">
+  <p>
+    리텐션이 떨어지면 분석가는 변수를 하나씩 쪼개 봅니다. 도시별로, 요금제별로, 연령대별로.
+    그런데 변수 23개를 둘씩 셋씩 겹치면 조합이 수백만 개가 됩니다.
+  </p>
+  <ul class="plain">
+    <li><b>원래 낮은 것과 떨어진 것을 구분하지 못한다</b>
+      <span>신규 유저의 리텐션은 원래 낮습니다. 낮다는 게 하락의 단서는 아닙니다.</span></li>
+    <li><b>단순한 전후 비교 비교는 한계가 있습니다</b>
+      <span>원래 리텐션이 낮은 집단이 이벤트로 대거 유입되는 경우가 있습니다.</span></li>
+    <li><b>작은 집단이 우연히 튄 것을 거를 수 없다</b>
+      <span>500명짜리 집단은 아무 일이 없어도 몇 %p씩 출렁입니다.</span></li>
+  </ul>
+  <p>
+    그래서 <em>수준</em>이 아니라 <em>기대에서 벗어난 정도</em>를 측정합니다.
+  </p>
+  </div>
+</div></section>
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<section id="data"><div class="inner">
+  <div class="sec-head">  <p class="kicker"><span class="chip">02</span><em>데이터</em></p>
+  <h2>가입이 아니라 활동을 기준으로 본다</h2>
+  <div class="bar"></div>
+  </div>
+  <div class="sec-body">
+
+  <div class="grid-2">
+    <figure>
+      <h3>3월 신규 유저 N-Day 리텐션</h3>
+      <div class="chart"><canvas id="chart-nday"></canvas></div>
+      <figcaption>
+        가입 당일 음악을 재생한 <span class="num" id="nday-users">—</span>명.
+        <strong>Day 3에서 Day 5 사이에 급락</strong>합니다(34.6% → 13.0%).
+        결제 기록이 있는 유저는 같은 구간에서 평평합니다.
+      </figcaption>
+    </figure>
+
+    <figure>
+      <h3>기준일별 D1 재방문율 (3월)</h3>
+      <div class="chart"><canvas id="chart-d1"></canvas></div>
+      <figcaption>
+        <strong>이 연구가 쓰는 지표.</strong> “오늘 들은 사람이 내일도 듣는가”를 봅니다.
+        점선은 <strong>기대 모델이 낸 예측</strong>이고, <strong>두 선 사이의 틈이 편차</strong>입니다.
+        시간이 지날 수록 생존효과로 인해 예측값보다 리텐션이 커집니다.
+        (평균 <span class="num" data-meta="평가편차" data-fmt="부호">—</span>%p).이 치우침을 집단별 회귀모델로 보정합니다.
+      </figcaption>
+    </figure>
+  </div>
+
+  <div class="callout">
+    <h4>왜 활동일 기준인가</h4>
+    <p>
+      가입 코호트 리텐션은 하루에 한 코호트만 생겨 분모가 얇고, 사건이 터진 날 이미 가입해 있던
+      대다수 유저를 못 봅니다. <strong>활동일을 기준일로 삼으면</strong> 하루 약 60만 명이 분모가 되고
+      사건 다음 날 바로 신호를 볼 수 있습니다. 분석 단위는 <code>유저 × 기준일</code>,
+      설명 변수는 <strong>기준일까지 관측 가능한 정보만</strong> 씁니다.
+    </p>
+  </div>
+  </div>
+</div></section>
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<section id="method"><div class="inner">
+  <div class="sec-head">  <p class="kicker"><span class="chip">03</span><em>방법</em></p>
+  <h2>기대에서 벗어난 정도를 재고, 집단을 탐색한다</h2>
+  <div class="bar"></div>
+  </div>
+  <div class="sec-body">
+
+  <ol class="steps">
+    <li>
+      <span class="step-n">STEP 1</span>
+      <h3>분석 테이블</h3>
+      <p>행 하나 = 유저 한 명의 하루. 설명 변수 23개. </br>결과는 다음 날 재방문 여부.</p>
+    </li>
+    <li>
+      <span class="step-n">STEP 2</span>
+      <h3>기대 모델</h3>
+      <p>유저가 “내일 돌아올 확률”을 산출합니다. </br>그리고 재접속여부와 모델의 결과의 차이를 측정합니다.</br><code>편차 = 실제 − 기대</code></p>
+    </li>
+    <li>
+      <span class="step-n">STEP 3</span>
+      <h3>기준선 보정</h3>
+      <p>집단마다 평소 추세를 회귀모델로 측정하여 뺍니다. <br>“원래 그랬던 것”을 제거하는 것입니다.</p>
+    </li>
+    <li>
+      <span class="step-n">STEP 4</span>
+      <h3>집단 탐색</h3>
+      <p>조건을 최대 3개까지 붙여 가며 <code>t</code>가 가장 음수인 집단을 찾습니다.</p>
+    </li>
+  </ol>
+
+  <div class="formula">
+    <p><code>보정후 = 평가 기간 평균 편차 − 기준선</code></p>
+    <p><code>t = 보정후 ÷ sqrt(평가 오차² + 기준선 오차²)</code></p>
+  </div>
+  <p class="note" style="margin-top:14px">
+   결과는 “원인”이 아니라 <strong>먼저 검증할 가설 1~K위</strong>입니다.
+  </p>
+  </div>
+</div></section>
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<section id="try"><div class="inner">
+  <div class="sec-head">  <p class="kicker"><span class="chip">04</span><em>돌려보기</em></p>
+  <h2>실제로 나오는 순위표</h2>
+  <div class="bar"></div>
+  </div>
+  <div class="sec-body">
+  <p>
+    이 방법이 내놓는 산출물은 <strong>의심되는 집단 순위표</strong>입니다.<br>
+    아래는 <strong>평가 2일 창</strong>에서 <strong>조건 두 개</strong>로 정의되는 집단을 찾은 결과입니다.<br>
+    특정 집단에 <strong>리텐션 하락을 3%p 주입</strong>했습니다.
+  </p>
+
+  <div class="wintabs-wrap">
+    <span class="wintabs-label">두 상황을 번갈아 보세요</span>
+    <div id="demo-tabs" class="wintabs" role="tablist"></div>
+  </div>
+  <p class="note" id="demo-desc">—</p>
+
+  <div class="table-wrap">
+    <table class="rank"><thead><tr>
+      <th class="r">순위</th><th>집단</th><th class="r">유효 인원</th>
+      <th class="r">보정후 편차</th><th class="r">t</th>
+    </tr></thead><tbody id="demo-rows"></tbody></table>
+  </div>
+
+  <p class="note">
+    <strong>t</strong> 가 <code id="demo-line">—</code> 보다 아래이면
+    「우연이라고 보기 어렵다」는 뜻입니다.
+  </p>
+  </div>
+</div></section>
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<section id="result"><div class="inner">
+  <div class="sec-head">  <p class="kicker"><span class="chip">05</span><em>결과</em></p>
+  <h2>얼마나 작은 하락까지 잡히나</h2>
+  <div class="bar"></div>
+  </div>
+  <div class="sec-body">
+  <p>
+    15개 집단의 재방문을 δ%p 떨어뜨린 뒤, 리텐션 하락 몇%p부터 찾아내는지 측정하였습니다.
+  </p>
+
+  <div class="wintabs-wrap">
+    <span class="wintabs-label">평가 기간을 눌러 바꿔 보세요 — 아래 숫자가 전부 바뀝니다</span>
+    <div id="window-tabs" class="wintabs hidden" role="tablist"></div>
+  </div>
+  <p class="note win-note">
+    하락이 감지된 뒤 <strong id="win-days">—</strong> 치 데이터로 진단한 경우입니다
+    (<span id="win-range">—</span>) <strong>2일이 본 분석</strong>이고 14일은 비교용입니다.
+  </p>
+
+
+
+  <h3 class="subhead">조건 두 개로 정의되는 집단</h3>
+  <p class="note">
+    <code>city = city 4 AND payment_method_id = 1</code> 처럼 조건을 겹쳐 자른 집단입니다.
+  </p>
+  <div id="find2-wrap" style="max-width:var(--read); margin:6px 0 32px">
+    <p class="note">
+        <strong>찾음 하한</strong>은 정답이 <strong>상위 3위 안에 드는</strong> 가장 작은 하락입니다.<br>
+        <strong>보고 하한</strong>은 그 집단의 t 가 <strong>판정선 아래로 내려가는</strong> 하락입니다
+      </p>
+    <div class="wintabs-wrap" style="margin:16px 0 12px; justify-content:flex-end">
+      <div class="wintabs" role="tablist" data-find="2">
+          <button type="button" role="tab" class="on" data-kind="찾음δ">찾음 하한</button>
+          <button type="button" role="tab" data-kind="보고δ">보고 하한</button>
+        </div>
+    </div>
+    <figure>
+      <div class="chart" style="height:430px"><canvas id="chart-find2"></canvas></div>
+    </figure>
+  </div>
+
+  <div class="slider-box">
+    <p class="howto">슬라이더를 움직여 집단별 탐지 하한을 확인할 수 있습니다.</p>
+    <label for="delta2">심은 하락 폭 <output id="delta-out2">5.0</output> <span class="note">%p</span></label>
+    <input type="range" id="delta2" min="0" max="20" step="0.5" value="5">
+    <div class="legend">
+      <span><i class="sw sw-none"></i>못 찾음</span>
+      <span><i class="sw sw-found"></i>찾았지만 “유의하다”고 말할 수 없음</span>
+      <span><i class="sw sw-report"></i>보고 가능</span>
+    </div>
+  </div>
+
+  <div id="groups2"></div>
+
+  <h3 class="subhead">조건 세 개로 정의되는 집단</h3>
+  <p class="note">
+    <code>city = city 4 AND payment_method_id = 1 AND age = 40+</code> 처럼 조건을 셋까지 겹친 집단입니다.<br>
+    여기서 처음으로 <strong>빔 서치가 못 닿는 집단</strong>이 나옵니다 — 2단계로 뻗으려면 <strong>부모가 먼저 상위 20칸에 들어야</strong> 하기 때문입니다
+    (조건 두 개 <strong id="gate2">—</strong>, 조건 세 개 <strong id="gate3">—</strong>).
+  </p>
+
+  <div id="find3-wrap" style="max-width:var(--read); margin:6px 0 32px">
+    <p class="note">
+        <strong>찾음 하한</strong>은 정답이 <strong>상위 3위 안에 드는</strong> 가장 작은 하락입니다.<br>
+        <strong>보고 하한</strong>은 그 집단의 t 가 <strong>판정선 아래로 내려가는</strong> 하락입니다
+      </p>
+    <div class="wintabs-wrap" style="margin:16px 0 12px; justify-content:flex-end">
+      <div class="wintabs" role="tablist" data-find="3">
+          <button type="button" role="tab" class="on" data-kind="찾음δ">찾음 하한</button>
+          <button type="button" role="tab" data-kind="보고δ">보고 하한</button>
+        </div>
+    </div>
+    <figure>
+      <div class="chart" style="height:430px"><canvas id="chart-find3"></canvas></div>
+    </figure>
+  </div>
+
+  <div class="slider-box">
+    <p class="howto">슬라이더를 움직여 집단별 탐지 하한을 확인할 수 있습니다. 눈금은 <strong>40%p</strong>까지입니다.</p>
+    <label for="delta3">심은 하락 폭 <output id="delta-out3">5.0</output> <span class="note">%p</span></label>
+    <input type="range" id="delta3" min="0" max="40" step="0.5" value="5">
+    <div class="legend">
+      <span><i class="sw sw-none"></i>못 찾음</span>
+      <span><i class="sw sw-found"></i>찾았지만 “유의하다”고 말할 수 없음</span>
+      <span><i class="sw sw-report"></i>보고 가능</span>
+    </div>
+  </div>
+
+  <div id="groups3"></div>
+
+  <div class="callout">
+    <h4>왜 두 단계인가</h4>
+    <p>
+      집단을 <strong>정확히 집어내는 것</strong>과 <strong>“우연이 아니다”라고 말하는 것</strong>은 다릅니다.
+      하락이 전혀 없는 데이터로 같은 탐색을 돌려도 6,000개 후보 중 가장 극단적인 집단은
+      <code>t = <span class="num" id="meta-bar">—</span></code>까지 나옵니다. 새로 찾은 집단이 그보다 세지 않으면
+      잡음과 구분할 수 없습니다. 가장 작은 집단에서는 <strong>정답을 글자 그대로 집어내고도</strong>
+      이 선을 못 넘는 구간이 있었습니다.
+    </p>
+  </div>
+
+  <div id="curve-wrap" class="hidden">
+    <h2 style="margin-top:72px">집단이 커져도 하한은 생각보다 느리게 내려간다</h2>
+    <div class="grid-2">
+      <figure>
+        <div class="chart"><canvas id="chart-curve"></canvas></div>
+        <figcaption>조건 하나로 정의되는 집단 <span class="num" id="curve-n">—</span>개.
+          가로축 유효 인원, 세로축 보고 가능해지는 하락 폭. 둘 다 로그 눈금.</figcaption>
+      </figure>
+      <div>
+        <table class="band" id="band-table"></table>
+        <p class="note" style="margin-top:16px">
+          유효 인원이 100배가 되어도 하한은 <strong>5배</strong>밖에 좋아지지 않습니다.
+          <strong>표본 오차만 작용한다면 10배</strong>여야 합니다
+          (로그-로그 기울기 <span class="num" id="curve-slope">—</span>, 표본만 작용하면 −0.50).
+        </p>
+        <p class="note" style="margin-top:14px">
+          <strong>기준선 오차에 바닥이 있기 때문</strong>입니다 — 같은 날 사람들은 다 같이 움직이는데,
+          추세선을 긋는 재료는 <strong>학습 15일치뿐</strong>입니다.
+          집단에 100만 명이 있어도 <strong>날짜는 여전히 15개</strong>입니다.
+        </p>
+      </div>
+    </div>
+  </div>
+  </div>
+</div></section>
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<section id="limits"><div class="inner">
+  <div class="sec-head">  <p class="kicker"><span class="chip">06</span><em>한계</em></p>
+  <h2>이 방법이 못 하는 것</h2>
+  <div class="bar"></div>
+  </div>
+  <div class="sec-body">
+  <dl class="limits">
+    <dt>탐색이 닿지 못하는 집단이 있다</dt>
+    <dd>조건 2개로 정의되는 집단은 그 부모(조건 1개)가 1단계 상위 20에 들어야 만들어집니다.<br>
+        부모가 20위 안에 들지 못하면 하락을 아무리 키워도 자식은 만들어지지 않습니다.<br>
+        따라서 조건2개 이상의 교호작용이 누락될 가능성이 있습니다.<br>
+        이는 빔의 폭을 넓히면(본 방법론에서는 20) 다소 보완가능하지만 연산시간이 배로 증가합니다.</dd>
+
+    <dt>유의성보다 순위 경쟁이 먼저 막는다</dt>
+    <dd>“보고할 만큼 뚜렷한가”를 넘겨도 상위 3위 안에 들지 못하면 내놓지 못합니다.
+        가장 심한 집단은 유의성 기준으로는 <span class="num">2%p</span> 하락이면 충분한데,
+        3위 안에 들려면 <span class="num">12.8%p</span>가 필요했습니다.
+        순위를 가로채는 것은 대개 더 큰 집단입니다.</dd>
+
+    <dt>서서히 나빠지는 하락은 다루지 않는다</dt>
+    <dd>이 방법은 사건 기점의 급락용입니다. 날마다 조금씩 심해지는 하락은 평가 기간 평균이 절반으로
+        희석되고, 더 근본적으로는 “정상 기간”을 어디로 잡아도 이미 하락이 섞여 기준선이 표류합니다.</dd>
+    <dt>순위는 “원인”이 아니라 “먼저 검증할 곳”이다</dt>
+    <dd>상위 가설은 A/B 테스트 등의 방법으로 따로 검증해야 합니다. <br>본 방법론은 리텐션 하락의 원인으로 의심되는 집단을 제시하는 것이지, 인과를 말하지 않습니다.</dd>
+  </dl>
+  </div>
+</div></section>
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<section id="repro"><div class="inner">
+  <div class="sec-head">  <p class="kicker"><span class="chip">07</span><em>재현</em></p>
+  <h2>코드와 데이터</h2>
+  <div class="bar"></div>
+  </div>
+  <div class="sec-body">
+  <p>
+    코드는
+    <a href="https://github.com/cwforest/retention-drop-discovery-public" target="_blank" rel="noopener">
+      github.com/cwforest/retention-drop-discovery-public</a>
+    에 있습니다. <strong>원자료는 포함되어 있지 않습니다</strong> —
+    <a href="https://www.kaggle.com/competitions/kkbox-churn-prediction-challenge/data" target="_blank" rel="noopener">
+      Kaggle WSDM Cup 2018(KKBox)</a>
+    데이터는 재배포가 금지되어 있어 직접 내려받아야 합니다.
+    이 페이지가 쓰는 숫자는 전부 집계된 결과이고 <code>docs/web/data/</code>에 JSON으로 들어 있습니다.
+  </p>
+  <table class="files">
+    <tr><td><code>EDA.ipynb</code></td><td>탐색 분석 — 위 두 그래프가 여기서 나옵니다</td></tr>
+    <tr><td><code>build_mart.ipynb</code></td><td>분석 테이블 만들기</td></tr>
+    <tr><td><code>Modeling.ipynb</code></td><td>기대 모델과 기준선 보정</td></tr>
+    <tr><td><code>Search.ipynb</code></td><td>집단 탐색</td></tr>
+    <tr><td><code>Bench.ipynb</code></td><td>하락을 심어 탐지력을 재는 실험판</td></tr>
+  </table>
+  </div>
+</div></section>
+
+</main>
+
+<footer><div class="inner">
+  <p>KKBox WSDM Cup 2018 · 2017년 3월 · 유저 110만 명 · 분석 행 <span data-meta="분석행" data-fmt="만">—</span></p>
+  <p id="built">—</p>
+  <p class="right">Lim Chaewon Portfolio</p>
+</div></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="web/app.js"></script>
+</body>
+</html>
